@@ -11,11 +11,11 @@
 
 #define TASK_RUNNING_TIME_MS            5000
 
-static const char* TAG = "Mutex";
+static const char* TAG = "BinarySemphr";
 
 struct TaskParam
 {
-    SemaphoreHandle_t xMutex;
+    SemaphoreHandle_t xSemaphore;
     int taskID;
 };
 typedef struct TaskParam t_TaskParam;
@@ -29,23 +29,29 @@ void app_main()
 
     vTaskPrioritySet(NULL, TASK_MAIN_PRIORITY);
 
-    /* Create mutex */
-    SemaphoreHandle_t xMutex = xSemaphoreCreateMutex();
-    if (xMutex == NULL)
+	/* Create binary semaphore */
+    SemaphoreHandle_t xSemaphore = xSemaphoreCreateBinary();
+    if (xSemaphore == NULL)
     {
-        ESP_LOGE(TAG, "[app_main] Error creating mutex.");
+        ESP_LOGE(TAG, "[app_main] Error creating binary semaphore.");
         exit(EXIT_FAILURE);
     }
-    ESP_LOGI(TAG, "[app_main] Mutex created.");    
+    ESP_LOGI(TAG, "[app_main] Binary semaphore created.");    
 
     for (int i = 0; i < NUM_TASKS; i++)
     {
         t_TaskParam *param = (t_TaskParam*)malloc(sizeof(t_TaskParam));
-        param->xMutex = xMutex;
+        param->xSemaphore = xSemaphore;
         param->taskID = i;
         xTaskCreate(vTask, "Task", TASK_STACK_SIZE, (void *)param, TASK_PRIORITY, &TaskHandles[i]);
         ESP_LOGI(TAG, "[app_main] Task %d created.", i);
     }
+
+    /*
+    https://docs.espressif.com/projects/esp-idf/en/latest/api-reference/system/freertos.html#semaphore-api 
+    xSemaphoreCreateBinary() is created in a state such that the semaphore must first be 'given' before it can be 'taken'.
+    */
+    xSemaphoreGive(xSemaphore);
     
     /* Wait TASK_RUNNING_TIME_MS ms */
     ESP_LOGI(TAG, "[app_main] Entering blocked state...");
@@ -60,10 +66,10 @@ void app_main()
         }
     }
 
-    if (xMutex != NULL)
+    if (xSemaphore != NULL)
     {
-        vSemaphoreDelete(xMutex);
-        ESP_LOGI(TAG, "[app_main] Mutex deleted.");
+        vSemaphoreDelete(xSemaphore);
+        ESP_LOGI(TAG, "[app_main] Binary semaphore deleted.");
     }
 }
 
@@ -74,16 +80,16 @@ void vTask(void * param)
     for (;;)
     {
         ESP_LOGI(TAG, "[vTask] Task %d attempts to use resource...", TaskData.taskID);
-        /* Wait for the mutex */
-        if (xSemaphoreTake(TaskData.xMutex, portMAX_DELAY) == pdTRUE)
+        /* Wait for the semaphore */
+        if (xSemaphoreTake(TaskData.xSemaphore, portMAX_DELAY) == pdTRUE)
         {
             UseResource(TaskData.taskID);
-            /* Release the mutex */
-            xSemaphoreGive(TaskData.xMutex);
+            /* Signal the semaphore */
+            xSemaphoreGive(TaskData.xSemaphore);
         }
         else
         {
-            ESP_LOGI(TAG, "[vTask] Cannot take the mutex.");
+            ESP_LOGI(TAG, "[vTask] Cannot take the semaphore.");
         }
     }
 }
