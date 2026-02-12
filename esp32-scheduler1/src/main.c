@@ -10,7 +10,11 @@
 #define APP_MAIN_PRIORITY	    5
 #define TASK_STACK_SIZE       2048   /* Words task stack size */
 
-#define TASK_RUNNING_TIME_MS  1000   /* Time for tasks to run */
+#define TASK_RUNNING_TIME_MS  5000   /* Time for tasks to run */
+
+#define TASK1_PERIOD_MS       200    /* Period of Task1 in ms */
+#define TASK2_PERIOD_MS       100    /* Period of Task2 in ms */
+#define TASK3_PERIOD_MS       100    /* Period of Task3 in ms */
 
 #define LOOP_COUNT_TASK_1     1000   /* Loop iterations for Task1 */
 #define LOOP_COUNT_TASK_2     2000   /* Loop iterations for Task2 */
@@ -50,10 +54,12 @@ void app_main()
   /* Wait TASK_RUNNING_TIME_MS ms */
   vTaskDelay(TASK_RUNNING_TIME_MS / portTICK_PERIOD_MS);
  
-  /* Display task statistics */
-  char bufferStats[2048];
-  vTaskGetRunTimeStats(bufferStats);
-  printf("\n%s\n", bufferStats);  
+  /* Display end message */
+  printf("\n\n=== End of execution ===\n");
+  printf("Tasks executed for %d ms\n", TASK_RUNNING_TIME_MS);
+  printf("Task1 (Priority %d, Period %dms): # symbols\n", TASK1_PRIORITY, TASK1_PERIOD_MS);
+  printf("Task2 (Priority %d, Period %dms): - symbols\n", TASK2_PRIORITY, TASK2_PERIOD_MS);
+  printf("Task3 (Priority %d, Period %dms): . symbols\n", TASK3_PRIORITY, TASK3_PERIOD_MS);
   
   /* Use the handles to delete the tasks. */
   if (xHandle1 != NULL)
@@ -67,7 +73,12 @@ void app_main()
   if (xHandle3 != NULL)
   {
     vTaskDelete(xHandle3);
-  }         
+  }
+  
+  /* Keep app_main alive to prevent scheduler issues */
+  while(1) {
+    vTaskDelay(pdMS_TO_TICKS(1000));
+  }
 }
 
 /* Task 1 function 
@@ -76,6 +87,7 @@ void app_main()
 void vTask1(void * parameter)
 {
   double aux = acos(-1.0);  /* aux = PI */
+  TickType_t xLastWakeTime = xTaskGetTickCount();
  
   /* loop forever */
   for(;;)
@@ -90,6 +102,7 @@ void vTask1(void * parameter)
         }
     }    
     aux = acos(-1.0);
+    vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(TASK1_PERIOD_MS));
   }
 }
 
@@ -99,6 +112,7 @@ void vTask1(void * parameter)
 void vTask2(void * parameter)
 {
   double aux = acos(-1.0);  /* aux = PI */
+  TickType_t xLastWakeTime = xTaskGetTickCount();
  
   /* loop forever */
   for(;;)
@@ -113,6 +127,7 @@ void vTask2(void * parameter)
         }
     }
     aux = acos(-1.0);
+    vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(TASK2_PERIOD_MS));
   }
 }
 
@@ -122,6 +137,7 @@ void vTask2(void * parameter)
 void vTask3(void * parameter)
 {
   double aux = acos(-1.0);  /* aux = PI */
+  TickType_t xLastWakeTime = xTaskGetTickCount();
  
   /* loop forever */
   for(;;)
@@ -136,5 +152,6 @@ void vTask3(void * parameter)
         }
     }
     aux = acos(-1.0);
+    vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(TASK3_PERIOD_MS));
   }
 }
