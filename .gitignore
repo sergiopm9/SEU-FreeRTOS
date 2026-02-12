@@ -1,0 +1,25 @@
+# PlatformIO build directories
+.pio/build/esp32doit-devkit-v1/
+
+# PlatformIO general build artifacts
+.pio/build/
+.pio/libdeps/
+
+# PlatformIO environment cache
+.pio/
+
+# VS Code settings (optional, uncomment if you want to ignore)
+# .vscode/
+
+# Python bytecode
+*.pyc
+__pycache__/
+
+# Operating system files
+.DS_Store
+Thumbs.db
+
+# Editor backup files
+*~
+*.swp
+*.swo
